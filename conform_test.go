@@ -108,6 +108,25 @@ func (t *testSuite) TestTrim() {
 	}
 }
 
+func BenchmarkTrim(b *testing.B) {
+
+	for n := 0; n < b.N; n++ {
+
+		var s struct {
+			nothing   string `conform:"trim"`
+			FirstName string `conform:"trim"`
+			LastName  string `conform:"trim"`
+		}
+
+		var t testSuite
+		s.FirstName = t.padding(fake.FirstName())
+		s.LastName = t.padding(fake.LastName())
+
+		Strings(&s)
+	}
+
+}
+
 func (t *testSuite) TestLeftTrim() {
 	assert := assert.New(t.T())
 
@@ -324,6 +343,16 @@ func (t *testSuite) TestTitle() {
 		if ok := assert.Regexp(t.RegExTitle, s.FullName, "Full name should be Title Cased"); !ok {
 			break
 		}
+	}
+}
+
+func BenchmarkTitle(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		var s struct {
+			FullName string `conform:"title"`
+		}
+		s.FullName = strings.ToLower(fake.FullName())
+		Strings(&s)
 	}
 }
 

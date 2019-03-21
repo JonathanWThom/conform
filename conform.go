@@ -28,6 +28,27 @@ var patterns = map[string]*regexp.Regexp{
 	"name":       regexp.MustCompile("[\\p{L}]([\\p{L}|[:space:]|\\-|\\']*[\\p{L}])*"),
 }
 
+var opts = map[string]func(string) string{
+	"trim":    strings.TrimSpace,
+	"ltrim":   lTrim,
+	"rtrim":   rTrim,
+	"lower":   strings.ToLower,
+	"upper":   strings.ToUpper,
+	"title":   strings.Title,
+	"camel":   stringUp.CamelCase,
+	"snake":   snake,
+	"slug":    slug,
+	"ucfirst": ucFirst,
+	"name":    formatName,
+	"email":   parseEmail,
+	"num":     onlyNumbers,
+	"!num":    stripNumbers,
+	"alpha":   onlyAlpha,
+	"!alpha":  stripAlpha,
+	"!html":   template.HTMLEscapeString,
+	"!js":     template.JSEscapeString,
+}
+
 // a valid email will only have one "@", but let's treat the last "@" as the domain part separator
 func emailLocalPart(s string) string {
 	i := strings.LastIndex(s, "@")
@@ -232,51 +253,34 @@ func transformString(input, tags string) string {
 	if tags == "" {
 		return input
 	}
+
 	for _, split := range strings.Split(tags, ",") {
-		switch split {
-		case "trim":
-			input = strings.TrimSpace(input)
-		case "ltrim":
-			input = strings.TrimLeft(input, " ")
-		case "rtrim":
-			input = strings.TrimRight(input, " ")
-		case "lower":
-			input = strings.ToLower(input)
-		case "upper":
-			input = strings.ToUpper(input)
-		case "title":
-			input = strings.Title(input)
-		case "camel":
-			input = stringUp.CamelCase(input)
-		case "snake":
-			input = camelTo(stringUp.CamelCase(input), "_")
-		case "slug":
-			input = camelTo(stringUp.CamelCase(input), "-")
-		case "ucfirst":
-			input = ucFirst(input)
-		case "name":
-			input = formatName(input)
-		case "email":
-			input = email(strings.TrimSpace(input))
-		case "num":
-			input = onlyNumbers(input)
-		case "!num":
-			input = stripNumbers(input)
-		case "alpha":
-			input = onlyAlpha(input)
-		case "!alpha":
-			input = stripAlpha(input)
-		case "!html":
-			input = template.HTMLEscapeString(input)
-		case "!js":
-			input = template.JSEscapeString(input)
-		default:
-			if s, ok := sanitizers[split]; ok {
-				input = s(input)
-			}
+		input = opts[split](input)
+		if s, ok := sanitizers[split]; ok {
+			input = s(input)
 		}
 	}
 	return input
+}
+
+func lTrim(input string) string {
+	return strings.TrimLeft(input, " ")
+}
+
+func rTrim(input string) string {
+	return strings.TrimRight(input, " ")
+}
+
+func snake(input string) string {
+	return camelTo(stringUp.CamelCase(input), "_")
+}
+
+func slug(input string) string {
+	return camelTo(stringUp.CamelCase(input), "-")
+}
+
+func parseEmail(input string) string {
+	return email(strings.TrimSpace(input))
 }
 
 // AddSanitizer associates a sanitizer with a key, which can be used in a Struct tag
